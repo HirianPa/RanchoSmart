@@ -1,4 +1,4 @@
-const CACHE_NAME = 'ranchosmart-v3';
+const CACHE_NAME = 'ranchosmart-v4';
 const ASSETS = [
     './',
     './index.html',
