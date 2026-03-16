@@ -1,0 +1,22 @@
+{
+    "name": "RanchoSmart",
+    "short_name": "RanchoSmart",
+    "start_url": "./",
+    "scope": "./",
+    "display": "standalone",
+    "background_color": "#0d1a0d",
+    "theme_color": "#1a2e1a",
+    "description": "Gestión ganadera profesional offline-first.",
+    "icons": [
+        {
+            "src": "assets/icon-192.png",
+            "sizes": "192x192",
+            "type": "image/png"
+        },
+        {
+            "src": "assets/icon-512.png",
+            "sizes": "512x512",
+            "type": "image/png"
+        }
+    ]
+}
