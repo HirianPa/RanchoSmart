@@ -140,7 +140,7 @@ const AnimalDetail = {
                     </div>
                     <input type="file" id="animal-photo-input" accept="image/*" capture="camera" style="display: none;">
                     <input type="hidden" name="photoUrl" id="f-photo-url">
-                    <button type="button" class="btn btn-secondary w-full" onclick="AnimalDetail.triggerAI()">
+                    <button type="button" class="btn btn-secondary w-full" onclick="window.AnimalDetail.triggerAI()">
                         ✨ Analizar con IA
                     </button>
                 </div>
