@@ -131,49 +131,91 @@ const AnimalDetail = {
         UI.createModal('REGISTRAR ANIMAL', `
             <form id="add-animal-form">
                 <div class="form-group">
+                    <label class="form-label">Foto del Animal</label>
+                    <div id="animal-photo-preview" class="camera-preview" style="height: 180px; margin-bottom: 15px; border: 2px dashed var(--border-color); display: flex; align-items: center; justify-content: center; overflow: hidden; border-radius: 12px; cursor: pointer;" onclick="document.getElementById('animal-photo-input').click()">
+                        <div style="text-align: center;">
+                            <span style="font-size: 40px;">📸</span>
+                            <p style="margin-top: 10px; font-size: 14px; color: var(--text-secondary);">Tocar para tomar foto</p>
+                        </div>
+                    </div>
+                    <input type="file" id="animal-photo-input" accept="image/*" capture="camera" style="display: none;">
+                    <input type="hidden" name="photoUrl" id="f-photo-url">
+                    <button type="button" class="btn btn-secondary w-full" onclick="AnimalDetail.triggerAI()">
+                        ✨ Analizar con IA
+                    </button>
+                </div>
+
+                <div class="form-group">
                     <label class="form-label">Arete / ID</label>
-                    <div style="display: flex; gap: 10px;">
-                        <input type="text" name="earTag" class="form-control" required style="flex: 1;">
-                        <button type="button" class="btn btn-secondary" onclick="AnimalDetail.triggerAI()">📸 AI</button>
+                    <input type="text" name="earTag" class="form-control" required placeholder="Ej: 1234">
+                </div>
+
+                <div class="grid-2">
+                    <div class="form-group">
+                        <label class="form-label">Raza</label>
+                        <input type="text" name="breed" id="f-breed" class="form-control" required placeholder="Ej: Brahman">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Sexo</label>
+                        <select name="sex" id="f-sex" class="form-control">
+                            <option value="F">Hembra</option>
+                            <option value="M">Macho</option>
+                        </select>
                     </div>
                 </div>
-                <div class="form-group">
-                    <label class="form-label">Raza</label>
-                    <input type="text" name="breed" id="f-breed" class="form-control" required>
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Sexo</label>
-                    <select name="sex" id="f-sex" class="form-control">
-                        <option value="F">Hembra</option>
-                        <option value="M">Macho</option>
-                    </select>
-                </div>
+
                 <div class="form-group">
                     <label class="form-label">Potrero</label>
                     <select name="pastureId" class="form-control">
                         ${pastures.map(p => `<option value="${p.id}">${p.name}</option>`).join('')}
                     </select>
                 </div>
-                 <div class="form-group">
-                    <label class="form-label">Peso Inicial (kg)</label>
-                    <input type="number" name="lastWeight" class="form-control">
+
+                <div class="grid-2">
+                    <div class="form-group">
+                        <label class="form-label">Peso Inicial (kg)</label>
+                        <input type="number" name="lastWeight" class="form-control" placeholder="0.0">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Fecha Nacimiento</label>
+                        <input type="date" name="birthDate" class="form-control">
+                    </div>
                 </div>
-                <div class="form-group">
-                    <label class="form-label">Fecha de Nacimiento</label>
-                    <input type="date" name="birthDate" class="form-control">
-                </div>
+
                 <div class="modal-actions">
                     <button type="button" class="btn btn-secondary" onclick="UI.closeModal()">Cancelar</button>
-                    <button type="submit" class="btn btn-primary">Guardar</button>
+                    <button type="submit" class="btn btn-primary">Guardar Animal</button>
                 </div>
             </form>
         `);
 
+        // Handle image capture
+        const photoInput = document.getElementById('animal-photo-input');
+        const photoUrlInput = document.getElementById('f-photo-url');
+        const photoPreview = document.getElementById('animal-photo-preview');
+
+        photoInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    const base64 = event.target.result;
+                    photoUrlInput.value = base64;
+                    photoPreview.innerHTML = `<img src="${base64}" style="width: 100%; height: 100%; object-fit: cover;">`;
+                    // Proactively trigger AI
+                    AnimalDetail.triggerAI(base64);
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
         document.getElementById('add-animal-form').onsubmit = async (e) => {
             e.preventDefault();
-            const data = Object.fromEntries(new FormData(e.target));
+            const formData = new FormData(e.target);
+            const data = Object.fromEntries(formData);
             await AnimalManager.add(data);
             UI.closeModal();
+            UI.showNotification('Animal registrado con éxito');
             window.RanchoSmart.loadView('animals');
         };
     },
@@ -280,12 +322,22 @@ const AnimalDetail = {
         window.RanchoSmart.loadView('animals');
     },
 
-    triggerAI: async () => {
+    triggerAI: async (imageData = null) => {
+        if (!imageData && !document.getElementById('f-photo-url').value) {
+            document.getElementById('animal-photo-input').click();
+            return;
+        }
+        
         UI.showNotification('Analizando con IA...', 'info');
-        const res = await VisualAI.analyze();
-        document.getElementById('f-breed').value = res.breed;
-        document.getElementById('f-sex').value = res.sex;
-        UI.showNotification('Datos rellenados por IA');
+        const res = await VisualAI.analyze(imageData || document.getElementById('f-photo-url').value);
+        
+        const breedInput = document.getElementById('f-breed');
+        const sexInput = document.getElementById('f-sex');
+        
+        if (breedInput) breedInput.value = res.breed;
+        if (sexInput) sexInput.value = res.sex;
+        
+        UI.showNotification('Datos rellenados por IA ✨');
     },
 
     showVaccineModal: async (id) => {
