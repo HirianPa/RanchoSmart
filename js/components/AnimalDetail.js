@@ -140,9 +140,15 @@ const AnimalDetail = {
                     </div>
                     <input type="file" id="animal-photo-input" accept="image/*" capture="camera" style="display: none;">
                     <input type="hidden" name="photoUrl" id="f-photo-url">
-                    <button type="button" class="btn btn-secondary w-full" onclick="window.AnimalDetail.triggerAI()">
-                        ✨ Analizar con IA
-                    </button>
+                    <div id="ai-progress-container" style="display: none; margin-top: 10px;">
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                            <span style="font-size: 12px; color: var(--accent-vibrant); font-weight: 600;" id="ai-status-text">Analizando animal...</span>
+                            <span style="font-size: 12px; color: var(--accent-vibrant); font-weight: 600;" id="ai-percentage">0%</span>
+                        </div>
+                        <div style="width: 100%; height: 6px; background: rgba(255,255,255,0.1); border-radius: 3px; overflow: hidden;">
+                            <div id="ai-progress-bar" style="width: 0%; height: 100%; background: var(--accent-vibrant); transition: width 0.3s ease;"></div>
+                        </div>
+                    </div>
                 </div>
 
                 <div class="form-group">
@@ -323,13 +329,28 @@ const AnimalDetail = {
     },
 
     triggerAI: async (imageData = null) => {
-        if (!imageData && !document.getElementById('f-photo-url').value) {
+        const photoUrl = imageData || document.getElementById('f-photo-url').value;
+        if (!photoUrl) {
             document.getElementById('animal-photo-input').click();
             return;
         }
         
-        UI.showNotification('Analizando con IA...', 'info');
-        const res = await VisualAI.analyze(imageData || document.getElementById('f-photo-url').value);
+        const container = document.getElementById('ai-progress-container');
+        const bar = document.getElementById('ai-progress-bar');
+        const percentageText = document.getElementById('ai-percentage');
+        const statusText = document.getElementById('ai-status-text');
+        
+        if (container) container.style.display = 'block';
+        
+        const res = await VisualAI.analyze(photoUrl, (progress) => {
+            if (bar) bar.style.width = `${progress}%`;
+            if (percentageText) percentageText.textContent = `${progress}%`;
+            if (statusText) {
+                if (progress < 40) statusText.textContent = 'Escaneando imagen...';
+                else if (progress < 80) statusText.textContent = 'Identificando patrones...';
+                else statusText.textContent = 'Finalizando análisis...';
+            }
+        });
         
         const breedInput = document.getElementById('f-breed');
         const sexInput = document.getElementById('f-sex');
@@ -337,7 +358,12 @@ const AnimalDetail = {
         if (breedInput) breedInput.value = res.breed;
         if (sexInput) sexInput.value = res.sex;
         
+        if (statusText) statusText.textContent = 'Análisis completo';
         UI.showNotification('Datos rellenados por IA ✨');
+        
+        setTimeout(() => {
+            if (container) container.style.display = 'none';
+        }, 2000);
     },
 
     showVaccineModal: async (id) => {

@@ -8,11 +8,14 @@ const VisualAI = {
      * Simulates scanning an image for animal characteristics
      * @param {string} imageData - Base64 or Blob
      */
-    analyze: async (imageData) => {
+    analyze: async (imageData, onProgress) => {
         console.log('VisualAI: Analyzing image data...');
         
-        // Simulating processing delay
-        await new Promise(resolve => setTimeout(resolve, 2000));
+        // Simulated progress steps
+        for (let i = 0; i <= 100; i += 10) {
+            if (onProgress) onProgress(i);
+            await new Promise(resolve => setTimeout(resolve, 200 + Math.random() * 300));
+        }
         
         // Mocked recognition patterns
         const patterns = [
